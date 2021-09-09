@@ -1,6 +1,6 @@
 import UIKit
 
-public enum PanScrollingMode: String, Equatable {
+public enum PanScrollingMode: String, Equatable, CaseIterable {
     /// The map allows the user to only scroll horizontally.
     case horizontal
 
@@ -92,52 +92,9 @@ public struct GestureOptions: Equatable {
     public var pitchEnabled: Bool = true
 
     /**
-        A Boolean value that determines whether the user will receive haptic feedback
-        for certain interactions with the map.
-
-        When this property is set to `true`, the default, a `UIImpactFeedbackStyleLight`
-        haptic feedback event be played when the user rotates the map to due north
-        (0°).
-
-        This feature requires a device that supports haptic feedback, running iOS 10 or
-        newer.
-
-        The default value of this property is `true`.
-    */
-    public var hapticFeedbackEnabled: Bool = true
-
-    /**
         A floating-point value that determines the rate of deceleration after the user lifts their finger.
     */
     public var decelerationRate: CGFloat = UIScrollView.DecelerationRate.normal.rawValue
 
     public init() {}
-
-    /// Emits the supported gesture types for the current set of options
-    internal func supportedGestureTypes() -> Set<GestureType> {
-        var supportedGestureTypes = Set<GestureType>()
-
-        if scrollEnabled {
-            supportedGestureTypes.insert(.pan)
-        }
-
-        if zoomEnabled {
-            supportedGestureTypes.insert(.pinch)
-            supportedGestureTypes.insert(.tap(numberOfTaps: 2,
-                                              numberOfTouches: 1))
-            supportedGestureTypes.insert(.tap(numberOfTaps: 2,
-                                              numberOfTouches: 2))
-            supportedGestureTypes.insert(.quickZoom)
-        }
-
-        if rotateEnabled {
-            supportedGestureTypes.insert(.rotate)
-        }
-
-        if pitchEnabled {
-            supportedGestureTypes.insert(.pitch)
-        }
-
-        return supportedGestureTypes
-    }
 }
