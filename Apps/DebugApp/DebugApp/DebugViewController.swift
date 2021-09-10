@@ -33,17 +33,55 @@ public class DebugViewController: UIViewController {
             self.addLine()
         }
     }
+    
+    var animationFrameCounter = 1
 
     func addLine() {
 
         // Create a GeoJSON data source.
         routeLineSource = GeoJSONSource()
         routeLineSource.data = .feature(Feature(geometry: .lineString(LineString(allCoordinates))))
+        routeLineSource.lineMetrics = true
 
         // Create a line layer
         var lineLayer = LineLayer(id: "line-layer")
         lineLayer.source = sourceIdentifier
         lineLayer.lineColor = .constant(StyleColor(.red))
+        lineLayer.lineGradient = .expression(
+            Exp(.interpolate) {
+                Exp(.linear)
+                Exp(.lineProgress)
+                0
+                UIColor.white
+                0.1
+                UIColor.black
+                1.0
+                UIColor.black
+            }
+        )
+        
+        Timer.scheduledTimer(withTimeInterval: 1.0/8.0, repeats: true) { [weak self] timer in
+            
+            guard let self = self else { return }
+        
+            let newExp = Exp(.interpolate) {
+                Exp(.linear)
+                Exp(.lineProgress)
+                self.makeStops()
+            }
+            
+            let jsonObject = try! JSONSerialization.jsonObject(
+                with: try! JSONEncoder().encode(newExp),
+                options: [])
+            
+            try! self.mapView.mapboxMap.style.setLayerProperty(for: "line-layer", property: "line-gradient", value: jsonObject)
+            
+            if self.animationFrameCounter < 5 {
+                self.animationFrameCounter += 1
+            } else {
+                self.animationFrameCounter = 1
+            }
+        }
 
         let lowZoomWidth = 5
         let highZoomWidth = 20
@@ -65,6 +103,46 @@ public class DebugViewController: UIViewController {
         // Add the lineLayer to the map.
         try! mapView.mapboxMap.style.addSource(routeLineSource, id: sourceIdentifier)
         try! mapView.mapboxMap.style.addLayer(lineLayer)
+    }
+    
+    func makeStops() -> [Double: UIColor] {
+        guard animationFrameCounter <= 5 && animationFrameCounter > 0 else {
+            fatalError()
+        }
+        
+        var stops: [Double: UIColor] = [:]
+        
+        if animationFrameCounter == 1 {
+            stops = [
+                0: .white,
+                0.3: .black
+            ]
+        } else if animationFrameCounter == 2 {
+            stops = [
+                0: .black,
+                0.3: .white,
+                0.6: .black
+            ]
+        } else if animationFrameCounter == 3 {
+            stops = [
+                0.3: .black,
+                0.6: .white,
+                0.9: .black
+            ]
+        } else if animationFrameCounter == 4 {
+            stops = [
+                0.6: .black,
+                0.9: .white,
+                1.0: .black
+            ]
+        } else if animationFrameCounter == 5 {
+            stops = [
+                0.7: .black,
+                1.0: .white
+            ]
+        }
+        
+        return stops
     }
 
     let allCoordinates = [
