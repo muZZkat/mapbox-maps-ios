@@ -378,7 +378,7 @@ extension MapboxMap: CameraManagerProtocol {
 extension MapboxMap: MapFeatureQueryable {
     public func queryRenderedFeatures(for shape: [CGPoint], options: RenderedQueryOptions? = nil, completion: @escaping (Result<[QueriedFeature], Error>) -> Void) {
         __map.queryRenderedFeatures(forShape: shape.map { $0.screenCoordinate },
-                                    options: options ?? RenderedQueryOptions(layerIds: nil, filter: nil),
+                                    options: options ?? RenderedQueryOptions(__layerIds: nil, filter: nil),
                                     callback: coreAPIClosureAdapter(for: completion,
                                                                     type: NSArray.self,
                                                                     concreteErrorType: MapError.self))
@@ -386,7 +386,7 @@ extension MapboxMap: MapFeatureQueryable {
 
     public func queryRenderedFeatures(in rect: CGRect, options: RenderedQueryOptions? = nil, completion: @escaping (Result<[QueriedFeature], Error>) -> Void) {
         __map.queryRenderedFeatures(for: ScreenBox(rect),
-                                    options: options ?? RenderedQueryOptions(layerIds: nil, filter: nil),
+                                    options: options ?? RenderedQueryOptions(__layerIds: nil, filter: nil),
                                     callback: coreAPIClosureAdapter(for: completion,
                                                                     type: NSArray.self,
                                                                     concreteErrorType: MapError.self))
@@ -394,7 +394,7 @@ extension MapboxMap: MapFeatureQueryable {
 
     public func queryRenderedFeatures(at point: CGPoint, options: RenderedQueryOptions? = nil, completion: @escaping (Result<[QueriedFeature], Error>) -> Void) {
         __map.queryRenderedFeatures(forPixel: point.screenCoordinate,
-                                    options: options ?? RenderedQueryOptions(layerIds: nil, filter: nil),
+                                    options: options ?? RenderedQueryOptions(__layerIds: nil, filter: nil),
                                     callback: coreAPIClosureAdapter(for: completion,
                                                                     type: NSArray.self,
                                                                     concreteErrorType: MapError.self))
@@ -558,6 +558,66 @@ extension MapboxMap {
                                  sourceLayerId: sourceLayerId,
                                  featureId: featureId,
                                  stateKey: stateKey)
+    }
+
+}
+
+// MARK: - View Annotations
+
+extension MapboxMap: MapViewAnnotationInterface {
+
+    // Dummy
+    public func makeViewAnnotationOptions(
+        coordinate: CLLocationCoordinate2D,
+        width: UInt32,
+        height: UInt32) -> ViewAnnotationOptions {
+        
+        let options = ViewAnnotationOptions(__geometry: MapboxCommon.Geometry(coordinate: coordinate),
+                                            width: width,
+                                            height: height,
+                                            allowViewAnnotationsCollision: true,
+                                            anchor: nil,
+                                            offsetX: 0,
+                                            offsetY: 0,
+                                            selected: false,
+                                            iconIdentifier: "")
+        
+        
+        
+        return options
+    }
+    public func calculateViewAnnotationsPosition(callback: @escaping ([ViewAnnotationPositionDescriptor]) -> Void) {
+        __map.calculateViewAnnotationsPosition(forCallback: callback)
+    }
+
+
+    /**
+     * Add view annotation.
+     *
+     * @return position for all views that need to be updated on the screen or null if views' placement remained the same.
+     */
+    public func addViewAnnotation(forIdentifier identifier: String, options: ViewAnnotationOptions) {
+        __map.addViewAnnotation(forIdentifier: identifier, options: options)
+    }
+
+
+    /**
+     * Update view annotation if it exists.
+     *
+     * @return position for all views that need to be updated on the screen or null if views' placement remained the same.
+     */
+    public func updateViewAnnotation(forIdentifier identifier: String, options: ViewAnnotationOptions) {
+        __map.updateViewAnnotation(forIdentifier: identifier, options: options)
+    }
+
+
+    /**
+     * Remove view annotation if it exists.
+     *
+     * @return position for all views that need to be updated on the screen or null if views' placement remained the same.
+     */
+    public func removeViewAnnotation(forIdentifier identifier: String) {
+        __map.removeViewAnnotation(forIdentifier: identifier)
     }
 
 }
