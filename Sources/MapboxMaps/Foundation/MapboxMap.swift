@@ -533,6 +533,30 @@ public final class MapboxMap: MapboxMapProtocol {
     public func dragEnd() {
         __map.dragEnd()
     }
+
+    // MARK: - Projection API
+
+    /// Set map projection for Mapbox map.
+    /// - Parameter mode: The `MapProjection` to be used by the map.
+    public func setProjection(mode: MapProjection) {
+        __map.setMapProjectionForProjection(["name": mode.rawValue])
+    }
+
+    /// Get current map projection for Mapbox map.
+    ///
+    /// Please note that even if MapboxMap is configured to use `MapProjection.globe`
+    /// starting from `MapProjection.transitionZoomLevel` and above this method will return `MapProjection.mercator`.
+    ///
+    /// - Returns:
+    ///     `MapProjection` map is using.
+    /// - Throws: `TypeConversionError.invalidObject` if projection is not recognized by the SDK.
+    public func getMapProjection() throws -> MapProjection {
+        guard let projName = (__map.getMapProjection() as? [String: String])?["name"],
+              let projection = MapProjection.init(rawValue: projName) else {
+            throw TypeConversionError.invalidObject
+        }
+        return projection
+    }
 }
 
 // MARK: - MapFeatureQueryable
