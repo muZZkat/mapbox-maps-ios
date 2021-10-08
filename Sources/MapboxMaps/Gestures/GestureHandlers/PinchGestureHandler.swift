@@ -78,13 +78,10 @@ internal final class PinchGestureHandler: GestureHandler {
                 return
             }
             
-            print("didZoom=\(didZoom). didRotate=\(didRotate)")
-
             let zoomIncrement = log2(gestureRecognizer.scale)
             if zoomIncrement > 0.1 || zoomIncrement < -0.1 {
                 didZoom = true
             }
-            
             
             var cameraOptions = CameraOptions()
             cameraOptions.center = initialCenter
@@ -93,7 +90,6 @@ internal final class PinchGestureHandler: GestureHandler {
 
             mapboxMap.setCamera(to: cameraOptions)
 
-//  TODO-LEGENDS - Disabled drag + rotate
             if panEnabled {
                 mapboxMap.dragStart(for: initialPinchMidpoint)
                 let dragOptions = mapboxMap.dragCameraOptions(
@@ -118,7 +114,6 @@ internal final class PinchGestureHandler: GestureHandler {
                 // coordinate system used for bearing in the map.
                 rotationInDegrees = Double(rotation * 180.0 / .pi * -1)
                 
-                print("rotationInDegrees=\(rotationInDegrees)")
                 if  rotationInDegrees > -5.0 && rotationInDegrees < 5.0 {
                     rotationInDegrees = 0
                 } else {
@@ -127,8 +122,6 @@ internal final class PinchGestureHandler: GestureHandler {
                 
             }
             
-            print("zoomIncrement=\(zoomIncrement), rotationInDegrees=\(rotationInDegrees), didZoom=\(didZoom). didRotate=\(didRotate)")
-
             mapboxMap.setCamera(
                 to: CameraOptions(
                     anchor: pinchMidpoint,
