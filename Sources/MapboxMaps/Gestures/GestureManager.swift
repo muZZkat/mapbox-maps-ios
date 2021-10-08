@@ -28,6 +28,8 @@ public final class GestureManager: GestureHandlerDelegate {
             panGestureHandler.decelerationFactor = newValue.panDecelerationFactor
             pinchGestureHandler.panEnabled = newValue.pinchPanEnabled
             pinchGestureHandler.rotateEnabled = newValue.pinchRotateEnabled
+            doubleTapToZoomInGestureHandler.anchorOnTouch = newValue.doubleTouchToZoomAnchorOnTouch
+            doubleTouchToZoomOutGestureHandler.anchorOnTouch = newValue.doubleTouchToZoomAnchorOnTouch
         }
         get {
             var gestureOptions = GestureOptions()
@@ -41,6 +43,8 @@ public final class GestureManager: GestureHandlerDelegate {
             gestureOptions.panDecelerationFactor = panGestureHandler.decelerationFactor
             gestureOptions.pinchPanEnabled = pinchGestureHandler.panEnabled
             gestureOptions.pinchRotateEnabled = pinchGestureHandler.rotateEnabled
+            gestureOptions.doubleTouchToZoomAnchorOnTouch = doubleTapToZoomInGestureHandler.anchorOnTouch
+            gestureOptions.doubleTouchToZoomAnchorOnTouch = doubleTouchToZoomOutGestureHandler.anchorOnTouch
             return gestureOptions
         }
     }
@@ -89,8 +93,8 @@ public final class GestureManager: GestureHandlerDelegate {
     private let panGestureHandler: PanGestureHandlerProtocol
 private let pinchGestureHandler: PinchGestureHandler
     private let pitchGestureHandler: GestureHandler
-    private let doubleTapToZoomInGestureHandler: GestureHandler
-    private let doubleTouchToZoomOutGestureHandler: GestureHandler
+    private let doubleTapToZoomInGestureHandler: DoubleTapToZoomInGestureHandler
+    private let doubleTouchToZoomOutGestureHandler: DoubleTouchToZoomOutGestureHandler
     private let quickZoomGestureHandler: GestureHandler
     private let singleTapGestureHandler: GestureHandler
     private let animationLockoutGestureHandler: GestureHandler
@@ -98,8 +102,8 @@ private let pinchGestureHandler: PinchGestureHandler
     internal init(panGestureHandler: PanGestureHandlerProtocol,
                   pinchGestureHandler: PinchGestureHandler,
                   pitchGestureHandler: GestureHandler,
-                  doubleTapToZoomInGestureHandler: GestureHandler,
-                  doubleTouchToZoomOutGestureHandler: GestureHandler,
+                  doubleTapToZoomInGestureHandler: DoubleTapToZoomInGestureHandler,
+                  doubleTouchToZoomOutGestureHandler: DoubleTouchToZoomOutGestureHandler,
                   quickZoomGestureHandler: GestureHandler,
                   singleTapGestureHandler: GestureHandler,
                   animationLockoutGestureHandler: GestureHandler) {

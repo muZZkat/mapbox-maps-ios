@@ -7,6 +7,8 @@ internal final class DoubleTapToZoomInGestureHandler: GestureHandler {
     private let mapboxMap: MapboxMapProtocol
 
     private let cameraAnimationsManager: CameraAnimationsManagerProtocol
+    
+    public var anchorOnTouch: Bool = false
 
     internal init(gestureRecognizer: UITapGestureRecognizer,
                   mapboxMap: MapboxMapProtocol,
@@ -26,9 +28,9 @@ internal final class DoubleTapToZoomInGestureHandler: GestureHandler {
             delegate?.gestureBegan(for: .doubleTapToZoomIn)
             delegate?.gestureEnded(for: .doubleTapToZoomIn, willAnimate: true)
 
-            let tapLocation = gestureRecognizer.location(in: view)
+            let anchorLocation = anchorOnTouch ? gestureRecognizer.location(in: view) : mapboxMap.anchor
             cameraAnimationsManager.ease(
-                to: CameraOptions(anchor: tapLocation, zoom: mapboxMap.cameraState.zoom + 1),
+            to: CameraOptions(anchor: anchorLocation, zoom: mapboxMap.cameraState.zoom + 1),
                 duration: 0.3,
                 curve: .easeOut) { _ in
                     self.delegate?.animationEnded(for: .doubleTapToZoomIn)

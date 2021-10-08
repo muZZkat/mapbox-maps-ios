@@ -8,6 +8,8 @@ internal final class DoubleTouchToZoomOutGestureHandler: GestureHandler {
 
     private let cameraAnimationsManager: CameraAnimationsManagerProtocol
 
+    public var anchorOnTouch: Bool = false
+
     internal init(gestureRecognizer: UITapGestureRecognizer,
                   mapboxMap: MapboxMapProtocol,
                   cameraAnimationsManager: CameraAnimationsManagerProtocol) {
@@ -27,9 +29,9 @@ internal final class DoubleTouchToZoomOutGestureHandler: GestureHandler {
             delegate?.gestureBegan(for: .doubleTouchToZoomOut)
             delegate?.gestureEnded(for: .doubleTouchToZoomOut, willAnimate: true)
 
-            let tapLocation = gestureRecognizer.location(in: view)
+            let anchorLocation = anchorOnTouch ? gestureRecognizer.location(in: view) : mapboxMap.anchor
             cameraAnimationsManager.ease(
-                to: CameraOptions(anchor: tapLocation, zoom: mapboxMap.cameraState.zoom - 1),
+                to: CameraOptions(anchor: anchorLocation, zoom: mapboxMap.cameraState.zoom - 1),
                 duration: 0.3,
                 curve: .easeOut) { _ in
                     self.delegate?.animationEnded(for: .doubleTouchToZoomOut)

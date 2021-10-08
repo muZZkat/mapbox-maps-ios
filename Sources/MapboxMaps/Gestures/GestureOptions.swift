@@ -39,6 +39,9 @@ public struct GestureOptions: Equatable {
     /// Defaults to `true`.
     public var doubleTouchToZoomOutEnabled: Bool = true
 
+    // TODO-LEGENDS if the double tap is ancored on touch or center
+    public var doubleTouchToZoomAnchorOnTouch: Bool = false
+    
     /// Whether the quick zoom gesture is enabled. Defaults to `true`.
     public var quickZoomEnabled: Bool = true
 
