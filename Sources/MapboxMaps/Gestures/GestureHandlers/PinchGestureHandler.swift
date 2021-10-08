@@ -20,6 +20,11 @@ internal final class PinchGestureHandler: GestureHandler {
 
     private let mapboxMap: MapboxMapProtocol
 
+    public var panEnabled: Bool = false
+    public var rotateEnabled: Bool = false
+    public var didZoom: Bool = false
+    public var didRotate: Bool = false
+
     /// Initialize the handler which creates the panGestureRecognizer and adds to the view
     internal init(gestureRecognizer: UIPinchGestureRecognizer,
                   mapboxMap: MapboxMapProtocol) {
@@ -32,7 +37,7 @@ internal final class PinchGestureHandler: GestureHandler {
         guard let view = gestureRecognizer.view else {
             return
         }
-        let pinchMidpoint = gestureRecognizer.location(in: view)
+        let pinchMidpoint = panEnabled ? gestureRecognizer.location(in: view) : mapboxMap.anchor
 
         switch gestureRecognizer.state {
         case .began:
@@ -72,8 +77,15 @@ internal final class PinchGestureHandler: GestureHandler {
                 self.initialBearing = mapboxMap.cameraState.bearing
                 return
             }
+            
+            print("didZoom=\(didZoom). didRotate=\(didRotate)")
 
             let zoomIncrement = log2(gestureRecognizer.scale)
+            if zoomIncrement > 0.1 || zoomIncrement < -0.1 {
+                didZoom = true
+            }
+            
+            
             var cameraOptions = CameraOptions()
             cameraOptions.center = initialCenter
             cameraOptions.zoom = initialZoom
@@ -82,37 +94,54 @@ internal final class PinchGestureHandler: GestureHandler {
             mapboxMap.setCamera(to: cameraOptions)
 
 //  TODO-LEGENDS - Disabled drag + rotate
-//            mapboxMap.dragStart(for: initialPinchMidpoint)
-//            let dragOptions = mapboxMap.dragCameraOptions(
-//                from: initialPinchMidpoint,
-//                to: pinchMidpoint)
-//            mapboxMap.setCamera(to: dragOptions)
-//            mapboxMap.dragEnd()
-//
-//            // the two angles will always be in the range [0, 2pi)
-//            // so the resulting rotation will be in the range (-2pi, 2pi)
-//            var rotation = pinchAngle - initialPinchAngle
-//            // if the rotation is negative, add 2pi so that the final
-//            // result is in the range [0, 2pi)
-//            if rotation < 0 {
-//                rotation += 2 * .pi
-//            }
-//            // convert from radians to degrees and flip the sign since
-//            // the iOS coordinate system is flipped relative to the
-//            // coordinate system used for bearing in the map.
-//            let rotationInDegrees = Double(rotation * 180.0 / .pi * -1)
+            if panEnabled {
+                mapboxMap.dragStart(for: initialPinchMidpoint)
+                let dragOptions = mapboxMap.dragCameraOptions(
+                    from: initialPinchMidpoint,
+                    to: pinchMidpoint)
+                mapboxMap.setCamera(to: dragOptions)
+                mapboxMap.dragEnd()
+            }
+            
+            var rotationInDegrees = 0.0
+            if rotateEnabled && (!didZoom || didRotate) {
+                // the two angles will always be in the range [0, 2pi)
+                // so the resulting rotation will be in the range (-2pi, 2pi)
+                var rotation = pinchAngle - initialPinchAngle
+                // if the rotation is negative, add 2pi so that the final
+                // result is in the range [0, 2pi)
+                if rotation < 0 {
+                    rotation += 2 * .pi
+                }
+                // convert from radians to degrees and flip the sign since
+                // the iOS coordinate system is flipped relative to the
+                // coordinate system used for bearing in the map.
+                rotationInDegrees = Double(rotation * 180.0 / .pi * -1)
+                
+                print("rotationInDegrees=\(rotationInDegrees)")
+                if  rotationInDegrees > -5.0 && rotationInDegrees < 5.0 {
+                    rotationInDegrees = 0
+                } else {
+                    didRotate = true
+                }
+                
+            }
+            
+            print("zoomIncrement=\(zoomIncrement), rotationInDegrees=\(rotationInDegrees), didZoom=\(didZoom). didRotate=\(didRotate)")
 
             mapboxMap.setCamera(
                 to: CameraOptions(
-                    anchor: initialPinchMidpoint,
+                    anchor: pinchMidpoint,
                     zoom: initialZoom + zoomIncrement,
-                    bearing: initialBearing))
+                    bearing: initialBearing + rotationInDegrees))
         case .ended, .cancelled:
             initialPinchMidpoint = nil
             initialPinchAngle = nil
             initialCenter = nil
             initialZoom = nil
             initialBearing = nil
+            didZoom = false
+            didRotate = false
             delegate?.gestureEnded(for: .pinch, willAnimate: false)
         default:
             break

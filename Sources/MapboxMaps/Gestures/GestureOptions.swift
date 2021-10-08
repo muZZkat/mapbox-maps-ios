@@ -23,6 +23,10 @@ public struct GestureOptions: Equatable {
     /// Whether the pinch gesture is enabled. Allows panning, rotating, and zooming.
     /// Defaults to `true`.
     public var pinchEnabled: Bool = true
+    
+    // TODO-LEGENDS Added pan/rotate options
+    public var pinchPanEnabled: Bool = true
+    public var pinchRotateEnabled: Bool = true
 
     /// Whether the pitch gesture is enabled. Defaults to `true`.
     public var pitchEnabled: Bool = true

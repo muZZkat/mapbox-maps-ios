@@ -26,6 +26,8 @@ public final class GestureManager: GestureHandlerDelegate {
             quickZoomGestureRecognizer.isEnabled = newValue.quickZoomEnabled
             panGestureHandler.panMode = newValue.panMode
             panGestureHandler.decelerationFactor = newValue.panDecelerationFactor
+            pinchGestureHandler.panEnabled = newValue.pinchPanEnabled
+            pinchGestureHandler.rotateEnabled = newValue.pinchRotateEnabled
         }
         get {
             var gestureOptions = GestureOptions()
@@ -37,6 +39,8 @@ public final class GestureManager: GestureHandlerDelegate {
             gestureOptions.quickZoomEnabled = quickZoomGestureRecognizer.isEnabled
             gestureOptions.panMode = panGestureHandler.panMode
             gestureOptions.panDecelerationFactor = panGestureHandler.decelerationFactor
+            gestureOptions.pinchPanEnabled = pinchGestureHandler.panEnabled
+            gestureOptions.pinchRotateEnabled = pinchGestureHandler.rotateEnabled
             return gestureOptions
         }
     }
@@ -83,7 +87,7 @@ public final class GestureManager: GestureHandlerDelegate {
     public weak var delegate: GestureManagerDelegate?
 
     private let panGestureHandler: PanGestureHandlerProtocol
-    private let pinchGestureHandler: GestureHandler
+private let pinchGestureHandler: PinchGestureHandler
     private let pitchGestureHandler: GestureHandler
     private let doubleTapToZoomInGestureHandler: GestureHandler
     private let doubleTouchToZoomOutGestureHandler: GestureHandler
@@ -92,7 +96,7 @@ public final class GestureManager: GestureHandlerDelegate {
     private let animationLockoutGestureHandler: GestureHandler
 
     internal init(panGestureHandler: PanGestureHandlerProtocol,
-                  pinchGestureHandler: GestureHandler,
+                  pinchGestureHandler: PinchGestureHandler,
                   pitchGestureHandler: GestureHandler,
                   doubleTapToZoomInGestureHandler: GestureHandler,
                   doubleTouchToZoomOutGestureHandler: GestureHandler,
