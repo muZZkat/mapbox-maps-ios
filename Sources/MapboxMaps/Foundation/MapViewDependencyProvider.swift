@@ -1,11 +1,11 @@
-import MetalKit
-
 internal protocol MapViewDependencyProviderProtocol: AnyObject {
     func makeMetalView(frame: CGRect, device: MTLDevice?) -> MTKView
     func makeDisplayLink(window: UIWindow, target: Any, selector: Selector) -> DisplayLinkProtocol?
     func makeGestureManager(view: UIView,
                             mapboxMap: MapboxMapProtocol,
                             cameraAnimationsManager: CameraAnimationsManagerProtocol) -> GestureManager
+    func makeLocationProducer(mayRequestWhenInUseAuthorization: Bool) -> LocationProducerProtocol
+    func makeLocationManager(locationProducer: LocationProducerProtocol, style: StyleProtocol) -> LocationManager
 }
 
 internal final class MapViewDependencyProvider: MapViewDependencyProviderProtocol {
@@ -30,7 +30,7 @@ internal final class MapViewDependencyProvider: MapViewDependencyProviderProtoco
     }
 
     func makePinchGestureHandler(view: UIView,
-                                 mapboxMap: MapboxMapProtocol) -> PinchGestureHandler {
+                                 mapboxMap: MapboxMapProtocol) -> PinchGestureHandlerProtocol {
         let gestureRecognizer = UIPinchGestureRecognizer()
         view.addGestureRecognizer(gestureRecognizer)
         return PinchGestureHandler(
@@ -126,6 +126,34 @@ internal final class MapViewDependencyProvider: MapViewDependencyProviderProtoco
             animationLockoutGestureHandler: makeAnimationLockoutGestureHandler(
                 view: view,
                 mapboxMap: mapboxMap,
-                cameraAnimationsManager: cameraAnimationsManager))
+                cameraAnimationsManager: cameraAnimationsManager),
+            mapboxMap: mapboxMap)
+    }
+
+    func makeLocationProducer(mayRequestWhenInUseAuthorization: Bool) -> LocationProducerProtocol {
+        let locationProvider = AppleLocationProvider()
+        return LocationProducer(
+            locationProvider: locationProvider,
+            mayRequestWhenInUseAuthorization: mayRequestWhenInUseAuthorization)
+    }
+
+    func makeLocationManager(locationProducer: LocationProducerProtocol, style: StyleProtocol) -> LocationManager {
+        let puckManager = PuckManager(
+            puck2DProvider: { configuration in
+                Puck2D(
+                    configuration: configuration,
+                    style: style,
+                    locationProducer: locationProducer)
+            },
+            puck3DProvider: { configuration in
+                Puck3D(
+                    configuration: configuration,
+                    style: style,
+                    locationProducer: locationProducer)
+            })
+
+        return LocationManager(
+            locationProducer: locationProducer,
+            puckManager: puckManager)
     }
 }

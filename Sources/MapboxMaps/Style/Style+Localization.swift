@@ -8,7 +8,7 @@ extension Style {
     /// - Parameter layerIds: An optional list of ids that need to be localized. If `nil` is provided, all layers will be updated
     public func localizeLabels(into locale: Locale, forLayerIds layerIds: [String]? = nil) throws {
         guard let localeValue = getLocaleValue(locale: locale) else {
-            fatalError("This locale is not supported")
+            throw MapError(coreError: NSString(string: "Locale: \(String(describing: locale)) is currently not supported"))
         }
 
         // Get all symbol layers that are currently on the map
@@ -85,7 +85,7 @@ extension Style {
 
         if var stringExpression = String(data: try JSONEncoder().encode(symbolLayer.textField), encoding: .utf8),
            stringExpression != "null" {
-            stringExpression.updateExpression(replacement: replacement, regex: expressionCoalesce)
+            stringExpression.updateOnceExpression(replacement: replacement, regex: expressionCoalesce)
             stringExpression.updateExpression(replacement: replacement, regex: expressionAbbr)
 
             // Turn the new json string back into an Expression
@@ -108,6 +108,22 @@ extension String {
     internal mutating func updateExpression(replacement: String, regex: NSRegularExpression) {
         let range = NSRange(location: 0, length: self.count)
 
+        self = regex.stringByReplacingMatches(in: self,
+                                              options: [],
+                                              range: range,
+                                              withTemplate: replacement)
+    }
+
+    /// Updates string once using the first occurrence of a regex
+    /// - Parameters:
+    ///   - replacement: New string to replace the matched pattern
+    ///   - regex: The regex pattern that will be matched for replacement
+    internal mutating func updateOnceExpression(replacement: String, regex: NSRegularExpression) {
+        var range = NSRange(location: 0, length: NSString(string: self).length)
+        range = regex.rangeOfFirstMatch(in: self, options: [], range: range)
+        if range.lowerBound == NSNotFound {
+            return
+        }
         self = regex.stringByReplacingMatches(in: self,
                                               options: [],
                                               range: range,

@@ -1,6 +1,7 @@
 // swiftlint:disable file_length
 @_exported import MapboxCoreMaps
 @_exported import MapboxCommon
+@_exported import MetalKit
 @_exported import Turf
 @_implementationOnly import MapboxCoreMaps_Private
 @_implementationOnly import MapboxCommon_Private
@@ -26,20 +27,24 @@ open class MapView: UIView {
     /// The `ornaments`object will be responsible for all ornaments on the map.
     public internal(set) var ornaments: OrnamentsManager!
 
-    /// The `camera` object manages a camera's view lifecycle..
+    /// The `camera` object manages a camera's view lifecycle.
     public internal(set) var camera: CameraAnimationsManager!
 
     /// The `location`object handles location events of the map.
     public internal(set) var location: LocationManager!
+    private var locationProducer: LocationProducerProtocol!
 
     /// Controls the addition/removal of annotations to the map.
     public internal(set) var annotations: AnnotationOrchestrator!
+
+    /// Manages the configuration of custom view annotations on the map.
+    public internal(set) var viewAnnotations: ViewAnnotationManager!
 
     /// Controls the display of attribution dialogs
     private var attributionDialogManager: AttributionDialogManager!
 
     /// A reference to the `EventsManager` used for dispatching telemetry.
-    internal var eventsListener: EventsListener!
+    private var eventsListener: EventsListener?
 
     /// A Boolean value that indicates whether the underlying `CAMetalLayer` of the `MapView`
     /// presents its content using a CoreAnimation transaction
@@ -64,6 +69,9 @@ open class MapView: UIView {
     internal private(set) var metalView: MTKView?
 
     private let cameraViewContainerView = UIView()
+
+    /// Holds ViewAnnotation views
+    private let viewAnnotationContainerView = SubviewInteractionOnlyView()
 
     /// Resource options for this map view
     internal private(set) var resourceOptions: ResourceOptions!
@@ -247,11 +255,26 @@ open class MapView: UIView {
             mapboxMap.setCamera(to: cameraOptions)
         }
 
+        if let metalView = metalView {
+            insertSubview(viewAnnotationContainerView, aboveSubview: metalView)
+        }
+
+        viewAnnotationContainerView.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            viewAnnotationContainerView.topAnchor.constraint(equalTo: topAnchor),
+            viewAnnotationContainerView.bottomAnchor.constraint(equalTo: bottomAnchor),
+            viewAnnotationContainerView.leftAnchor.constraint(equalTo: leftAnchor),
+            viewAnnotationContainerView.rightAnchor.constraint(equalTo: rightAnchor)
+        ])
+
         cameraViewContainerView.isHidden = true
         addSubview(cameraViewContainerView)
 
-        // Setup Telemetry logging
-        setUpTelemetryLogging()
+        // Setup Telemetry logging. Delay initialization by 10 seconds.
+        DispatchQueue.main.asyncAfter(deadline: .now() + 10) { [weak self] in
+            guard let self = self else { return }
+            self.setUpTelemetryLogging()
+        }
 
         // Set up managers
         setupManagers()
@@ -278,8 +301,12 @@ open class MapView: UIView {
             cameraAnimationsManager: camera,
             infoButtonOrnamentDelegate: attributionDialogManager)
 
-        // Initialize/Configure location manager
-        location = LocationManager(style: mapboxMap.style)
+        // Initialize/Configure location source and location manager
+        locationProducer = dependencyProvider.makeLocationProducer(
+            mayRequestWhenInUseAuthorization: Bundle.main.infoDictionary?["NSLocationWhenInUseUsageDescription"] != nil)
+        location = dependencyProvider.makeLocationManager(
+            locationProducer: locationProducer,
+            style: mapboxMap.style)
 
         // Initialize/Configure annotations orchestrator
         annotations = AnnotationOrchestrator(
@@ -287,6 +314,9 @@ open class MapView: UIView {
             mapFeatureQueryable: mapboxMap,
             style: mapboxMap.style,
             displayLinkCoordinator: self)
+
+        // Initialize/Configure view annotations manager
+        viewAnnotations = ViewAnnotationManager(containerView: viewAnnotationContainerView, mapboxMap: mapboxMap)
     }
 
     private func checkForMetalSupport() {
@@ -350,6 +380,8 @@ open class MapView: UIView {
             return
         }
 
+        updateHeadingOrientationIfNeeded()
+
         for participant in displayLinkParticipants.allObjects {
             participant.participate()
         }
@@ -412,20 +444,62 @@ open class MapView: UIView {
 
     @objc func didReceiveMemoryWarning() {
         mapboxMap.reduceMemoryUse()
-        eventsListener.push(event: .memoryWarning)
     }
 
     // MARK: Telemetry
 
     private func setUpTelemetryLogging() {
         guard let validResourceOptions = resourceOptions else { return }
-        let eventsListener = EventsManager(accessToken: validResourceOptions.accessToken)
+        eventsListener = EventsManager(accessToken: validResourceOptions.accessToken)
+        eventsListener?.push(event: .map(event: .loaded))
+    }
 
-        DispatchQueue.main.async {
-            eventsListener.push(event: .map(event: .loaded))
+    // MARK: Location
+
+    private func updateHeadingOrientationIfNeeded() {
+        // locationProvider.headingOrientation should be adjusted based on the
+        // current UIInterfaceOrientation of the containing window, not the
+        // device orientation
+        let optionalInterfaceOrientation: UIInterfaceOrientation?
+        if #available(iOS 13.0, *) {
+            optionalInterfaceOrientation = window?.windowScene?.interfaceOrientation
+        } else {
+            optionalInterfaceOrientation =  UIApplication.shared.statusBarOrientation
         }
 
-        self.eventsListener = eventsListener
+        guard let interfaceOrientation = optionalInterfaceOrientation else {
+            return
+        }
+
+        // UIInterfaceOrientation.landscape{Right,Left} correspond to
+        // CLDeviceOrientation.landscape{Left,Right}, respectively. The reason
+        // for this, according to the UIInterfaceOrientation docs is that
+        //
+        //    > …rotating the device requires rotating the content in the
+        //    > opposite direction.
+        var headingOrientation: CLDeviceOrientation
+        switch interfaceOrientation {
+        case .landscapeLeft:
+            headingOrientation = .landscapeRight
+        case .landscapeRight:
+            headingOrientation = .landscapeLeft
+        case .portraitUpsideDown:
+            headingOrientation = .portraitUpsideDown
+        default:
+            headingOrientation = .portrait
+        }
+
+        // We check for heading changes during the display link, but setting it
+        // causes a heading update, so we only set it when it changes to avoid
+        // unnecessary work.
+        //
+        // It would be more efficient to update this value by observing
+        // interface orientation changes, but you need a view controller to do
+        // that (via `willTransition(to:with:)`), which is something we don't
+        // have, so we poll instead.
+        if locationProducer.headingOrientation != headingOrientation {
+            locationProducer.headingOrientation = headingOrientation
+        }
     }
 }
 
@@ -445,7 +519,7 @@ extension MapView: DelegatingMapClientDelegate {
             metalView.setNeedsDisplay()
         }
 
-        metalView.autoresizingMask = [.flexibleHeight, .flexibleWidth]
+        metalView.translatesAutoresizingMaskIntoConstraints = false
         metalView.autoResizeDrawable = true
         metalView.contentScaleFactor = pixelRatio
         metalView.contentMode = .center
@@ -456,6 +530,28 @@ extension MapView: DelegatingMapClientDelegate {
         metalView.presentsWithTransaction = false
 
         insertSubview(metalView, at: 0)
+
+        let sameHeightConstraint = metalView.heightAnchor.constraint(equalTo: heightAnchor)
+        sameHeightConstraint.priority = .defaultHigh
+
+        let minHeightConstraint = metalView.heightAnchor.constraint(greaterThanOrEqualToConstant: 1)
+        minHeightConstraint.priority = .required
+
+        let sameWidthConstraint = metalView.widthAnchor.constraint(equalTo: widthAnchor)
+        sameWidthConstraint.priority = .defaultHigh
+
+        let minWidthConstraint = metalView.widthAnchor.constraint(greaterThanOrEqualToConstant: 1)
+        minWidthConstraint.priority = .required
+
+        NSLayoutConstraint.activate([
+            metalView.topAnchor.constraint(equalTo: topAnchor),
+            sameHeightConstraint,
+            minHeightConstraint,
+            metalView.leftAnchor.constraint(equalTo: leftAnchor),
+            sameWidthConstraint,
+            minWidthConstraint
+        ])
+
         self.metalView = metalView
 
         return metalView

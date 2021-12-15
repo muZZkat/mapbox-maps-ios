@@ -44,6 +44,10 @@ public struct Examples {
         [
             "title": "User Interaction",
             "examples": userInteractionExamples
+        ],
+        [
+            "title": "Experimental",
+            "examples": experimentalExamples
         ]
     ]
 
@@ -70,8 +74,8 @@ public struct Examples {
         Example(title: "SceneKit rendering on map",
                 description: "Use custom layer to render SceneKit model over terrain.",
                 type: SceneKitExample.self),
-        Example(title: "Display buildings in 3D",
-                description: "Use extrusions to display buildings' height in 3D.",
+        Example(title: "Display 3D buildings",
+                description: "Extrude the building layer in the Mapbox Light style using FillExtrusionLayer and set up the light position.",
                 type: BuildingExtrusionsExample.self),
         Example(title: "Add a sky layer",
                 description: "Add a customizable sky layer to simulate natural lighting with a Terrain layer.",
@@ -100,18 +104,26 @@ public struct Examples {
                 type: SwiftUIExample.self),
         Example(title: "Add multiple annotations to a map",
                 description: "Add default and custom annotations to a map.",
-                type: MultiplePointAnnotationsExample.self)
+                type: MultiplePointAnnotationsExample.self),
+        Example(title: "Add view annotations",
+                description: "Add view annotation on a map click.",
+                type: ViewAnnotationBasicExample.self),
+        Example(title: "Add view annotations connected to features",
+                description: "Add view annotation anchored to a symbol layer feature.",
+                type: ViewAnnotationMarkerExample.self)
     ]
 
     // Examples that focus on setting, animating, or otherwise changing the map's camera.
     public static let cameraExamples = [
         Example(title: "Fly-to camera animation",
                 description: """
-                    Animate the map camera to a new position using camera animators. Individual camera properties such as zoom, bearing, and center coordinate can be animated independently.
+                    Smoothly interpolate between locations with the fly-to animation.
                 """,
                 type: FlyToExample.self),
             Example(title: "Use custom camera animations",
-                description: "Animates the map camera using map camera properties.",
+                description: """
+                    Animate the map camera to a new position using camera animators. Individual camera properties such as zoom, bearing, and center coordinate can be animated independently.
+                """,
                 type: CameraAnimatorsExample.self),
         Example(title: "Use camera animations",
                 description: "Use ease(to:) to animate updates to the camera's position.",
@@ -141,7 +153,7 @@ public struct Examples {
 
                     By default, users may download up to 250MB of data for offline
                     use without incurring additional charges. This limit is subject
-                    to change during the beta.
+                    to change.
                 """,
                 type: OfflineManagerExample.self),
         Example(title: "Use OfflineRegionManager to download a region",
@@ -169,7 +181,7 @@ public struct Examples {
     public static let styleExamples = [
         Example(title: "Display multiple icon images in a symbol layer",
                 description: """
-            Use different images to represent features within a symbol layer based on properties.
+            Add point data and several images to a style and use the switchCase and get expressions to choose which image to display at each point in a SymbolLayer based on a data property.
             """,
                 type: DataDrivenSymbolsExample.self),
         Example(title: "Change the position of a layer",
@@ -199,7 +211,7 @@ public struct Examples {
                 description: "Add a custom rendered Metal layer.",
                 type: CustomLayerExample.self),
         Example(title: "Add a line with a color gradient",
-                description: "Add a line with a rainbow color gradient.",
+                description: "Load a polyline to a style using GeoJSONSource, display it on a map using LineLayer, and style it with a rainbow color gradient.",
                 type: LineGradientExample.self),
         Example(title: "Change the map's style",
                 description: "Switch between local and default Mapbox styles for the same map view.",
@@ -207,18 +219,19 @@ public struct Examples {
         Example(title: "Change the map's language",
                 description: "Switch between supported languages for Symbol Layers",
                 type: LocalizationExample.self),
-        Example(title: "Add an animated image",
-                description: "Add an image to a raster layer on the map and animate it.",
+        Example(title: "Add animated weather data",
+                description: "Load a raster image to a style using ImageSource and display it on a map as animated weather data using RasterLayer.",
                 type: AnimateImageLayerExample.self),
         Example(title: "Add a raster tile source",
                 description: "Add third-party raster tiles to a map.",
                 type: RasterTileSourceExample.self),
         Example(title: "Show and hide layers",
-                description: "Enable and disable two different map layers at runtime.",
+                description: "Allow the user to toggle the visibility of a CircleLayer and LineLayer on a map.",
                 type: ShowHideLayerExample.self),
         Example(title: "Add live data",
                 description: "Update feature coordinates from a geoJSON source in real time.",
-                type: LiveDataExample.self)
+                type: LiveDataExample.self),
+        Example(title: "Use a distance expression", description: "Use a distance style expression to show features within a specific radius.", type: DistanceExpressionExample.self)
     ]
 
     // Examples that show use cases related to user interaction with the map.
@@ -235,6 +248,13 @@ public struct Examples {
         Example(title: "Add an interactive clustered layer",
                 description: "Display an alert controller after selecting a feature.",
                 type: SymbolClusteringExample.self),
+    ]
+
+    // Examples that uses experimental APIs
+    public static let experimentalExamples = [
+        Example(title: "Globe View",
+                description: "Display map on a globe.",
+                type: GlobeViewExample.self),
     ]
 }
 

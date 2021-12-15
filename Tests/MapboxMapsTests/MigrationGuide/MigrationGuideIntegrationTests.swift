@@ -1,7 +1,7 @@
 import XCTest
 @testable import MapboxMaps
 
-// swiftlint:disable file_length orphaned_doc_comment type_body_length
+// swiftlint:disable orphaned_doc_comment
 class MigrationGuideIntegrationTests: IntegrationTestCase {
 
     var view: UIView?
@@ -21,6 +21,14 @@ class MigrationGuideIntegrationTests: IntegrationTestCase {
         view?.removeFromSuperview()
         view = nil
         ResourceOptionsManager.destroyDefault()
+    }
+
+    func geoJSONURL(from name: String) -> URL? {
+        guard let path = Bundle.mapboxMapsTests.path(forResource: name, ofType: "geojson") else {
+            XCTFail("Fixture \(name) not found.")
+            return nil
+        }
+        return URL(fileURLWithPath: path)
     }
 
     func testBasicMapViewController() throws {
@@ -378,7 +386,7 @@ class MigrationGuideIntegrationTests: IntegrationTestCase {
 
         let someTurfFeature = Feature(geometry: .point(Point(CLLocationCoordinate2D(latitude: 0, longitude: 0))))
         let someTurfFeatureCollection = FeatureCollection(features: [someTurfFeature])
-        let someGeoJSONDocumentURL = Fixture.geoJSONURL(from: "polygon")!
+        let someGeoJSONDocumentURL = geoJSONURL(from: "polygon")!
 
         //-->
         // Setting the `data` property with a url pointing to a GeoJSON document
@@ -392,7 +400,7 @@ class MigrationGuideIntegrationTests: IntegrationTestCase {
     func testAddGeoJSONSource() {
         var myGeoJSONSource = GeoJSONSource()
         myGeoJSONSource.maxzoom = 14
-        myGeoJSONSource.data = .url(Fixture.geoJSONURL(from: "polygon")!)
+        myGeoJSONSource.data = .url(geoJSONURL(from: "polygon")!)
 
         let mapView = MapView(frame: testRect)
         let expectation = self.expectation(description: "Source was added")
@@ -502,7 +510,7 @@ class MigrationGuideIntegrationTests: IntegrationTestCase {
         mapView.location.options.puckType = .puck2D()
         //<--
 
-        let customLocationProvider = LocationProviderMock(options: LocationOptions())
+        let customLocationProvider = MockLocationProvider()
         //-->
         mapView.location.overrideLocationProvider(with: customLocationProvider)
         //<--

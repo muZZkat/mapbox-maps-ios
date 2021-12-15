@@ -2,6 +2,74 @@
 
 Mapbox welcomes participation and contributions from everyone.
 
+## main
+
+* Added `Style.removeTerrain()` to allow removing terrain. ([#918](https://github.com/mapbox/mapbox-maps-ios/pull/918))
+
+## 10.2.0-rc.1 - December 2, 2021
+
+* Removed experimental designation from persistent layer APIs. ([#849](https://github.com/mapbox/mapbox-maps-ios/pull/849))
+* Fixed an issue that prevented direct download artifacts from exposing experimental APIs. ([#854](https://github.com/mapbox/mapbox-maps-ios/pull/854))
+* Updates `Style.localizeLabels(into:forLayerIds:)` to only localize the primary localization and not the fall-through localizations. ([#856](https://github.com/mapbox/mapbox-maps-ios/pull/856))
+* Removes swiftlint config from direct download artifacts. ([#859](https://github.com/mapbox/mapbox-maps-ios/pull/859))
+* Removed `AnnotationView` wrapper views from `ViewAnnotationManager` API. ([#846](https://github.com/mapbox/mapbox-maps-ios/pull/846))
+* Reduce geometry wrapping using GeometryConvertible. ([#861](https://github.com/mapbox/mapbox-maps-ios/pull/861))
+* Fixed an issue that could prevent the location puck from appearing. ([#862](https://github.com/mapbox/mapbox-maps-ios/pull/862))
+* Added support for exponentials to `StyleColor`. ([#873](https://github.com/mapbox/mapbox-maps-ios/pull/873))
+* Fixes initialization of attribution dialog. ([#865](https://github.com/mapbox/mapbox-maps-ios/pull/865))
+* Improved panning behavior on pitched maps. ([#888](https://github.com/mapbox/mapbox-maps-ios/pull/888))
+* Added pinch gesture tradeoff configuration option. ([#890](https://github.com/mapbox/mapbox-maps-ios/pull/890))
+* Update to MapboxCoreMaps 10.2.0-rc.1 and MapboxCommon 21.0.0-rc.2. ([#891](https://github.com/mapbox/mapbox-maps-ios/pull/891))
+
+## 10.2.0-beta.1 - November 19, 2021
+
+* Fixed an issue where camera animations triggered with `startAnimation(afterDelay:)` could appear jerky after a pan gesture. ([#789](https://github.com/mapbox/mapbox-maps-ios/pull/789))
+* Send location update when puck is nil and other location-related improvements. ([#765](https://github.com/mapbox/mapbox-maps-ios/pull/765))
+* Update to MapboxCoreMaps 10.2.0-beta.1 and MapboxCommon 21.0.0-rc.1. ([#836](https://github.com/mapbox/mapbox-maps-ios/pull/836))
+* Updates pan and pinch gesture handling to work iteratively rather than based on initial state. ([#837](https://github.com/mapbox/mapbox-maps-ios/pull/837))
+* `AnnotationOrchestrator`, rather than the annotation managers, now manages the single-tap gesture recognizer for annotations. ([#840](https://github.com/mapbox/mapbox-maps-ios/pull/840))
+* Add view annotations feature, which enables the usage of custom UIView subclasses as annotations. ([#776](https://github.com/mapbox/mapbox-maps-ios/pull/776))
+
+## 10.1.1 - December 1, 2021
+
+**NOTE:** As of December 3, 2021, this release is no longer available due to a new bug that was introduced while fixing the billing issue. A new patch will be issued shortly.
+
+* Fixed billing issue when upgrading Mapbox Maps SDK from v6 to v10. ([#885](https://github.com/mapbox/mapbox-maps-ios/pull/885))
+
+## 10.1.0 - November 4, 2021
+
+* Update to `MapboxCoreMaps` v10.1.0 and `MapboxCommon` v20.1.0. ([#807](https://github.com/mapbox/mapbox-maps-ios/pull/807))
+
+## 10.1.0-rc.1 - October 28, 2021
+
+* Fixed an issue with `UIImage` conversion that led to a "mismatched image size" error. ([#790](https://github.com/mapbox/mapbox-maps-ios/pull/790))
+* Update to `MapboxCoreMaps` v10.1.0-rc and `MapboxCommon` v20.1.0-rc.2. ([#790](https://github.com/mapbox/mapbox-maps-ios/pull/790))
+
+## 10.1.0-beta.1 - October 21, 2021
+
+* Make `PointAnnotation.Image`'s fields public. ([#753](https://github.com/mapbox/mapbox-maps-ios/pull/753))
+* Set `MapboxMap` flags during gestures and animations. ([#754](https://github.com/mapbox/mapbox-maps-ios/pull/754))
+* Treat anchor as constant for `ease(to:)` animations. ([#772](https://github.com/mapbox/mapbox-maps-ios/pull/772))
+* Fix experimental snapshot API for iOS 15. ([#760](https://github.com/mapbox/mapbox-maps-ios/pull/760))
+* Decelerate more quickly (or not at all) on pitched maps. ([#773](https://github.com/mapbox/mapbox-maps-ios/pull/773))
+* Add `GestureOptions.pinchRotateEnabled` to configure whether the pinch gesture rotates the map. ([#779](https://github.com/mapbox/mapbox-maps-ios/pull/779))
+* Fixed a name collision between Swift symbols and `MapboxCoreMaps.Task`. ([#769](https://github.com/mapbox/mapbox-maps-ios/pull/769))
+* Fixed an issue that caused `queryFeatureExtension` to fail. ([#769](https://github.com/mapbox/mapbox-maps-ios/pull/769))
+* Updated `MapboxCoreMaps` to v10.1.0-beta and `MapboxCommon` to 20.1.0-rc.1. ([#769](https://github.com/mapbox/mapbox-maps-ios/pull/769))
+
+## 10.0.2 - November 29, 2021
+
+**NOTE:** As of December 3, 2021, this release is no longer available due to a new bug that was introduced while fixing the billing issue. A new patch will be issued shortly.
+
+* Fixed billing issue when upgrading Mapbox Maps SDK from v6 to v10. ([#876](https://github.com/mapbox/mapbox-maps-ios/pull/876))
+
+## 10.0.1 - October 15, 2021
+
+* Passing an unsupported locale into `Style.localizeLabels(into:forLayerIds:)` throws an error instead of crashing. ([#752](https://github.com/mapbox/mapbox-maps-ios/pull/752))
+* Fixed a bug affecting the persistence of user settings when upgrading to v10. ([#758](https://github.com/mapbox/mapbox-maps-ios/pull/758))
+* Allow compass visibility to accurately reflect set value. ([#757](https://github.com/mapbox/mapbox-maps-ios/pull/757))
+* Update MapboxMobileEvents to v1.0.6, fixing a null pointer crash. ([#762](https://github.com/mapbox/mapbox-maps-ios/pull/762))
+
 ## 10.0.0 - October 6, 2021
 
 ### Breaking changes ⚠️
@@ -52,7 +120,6 @@ Mapbox welcomes participation and contributions from everyone.
 * Adds `TileStoreObserver` protocol. ([#737](https://github.com/mapbox/mapbox-maps-ios/pull/737))
 
 ### Bug fixes 🐞
-
 * Fix rendering artifacts for a model layer when `model-opacity` property is used. ([#732](https://github.com/mapbox/mapbox-maps-ios/pull/732))
 * Improve rendering performance by avoiding unnecessary re-layout for cached tiles. ([#732](https://github.com/mapbox/mapbox-maps-ios/pull/732))
 * Fix telemetry opt-out through attribution dialog. ([#743](https://github.com/mapbox/mapbox-maps-ios/pull/743))

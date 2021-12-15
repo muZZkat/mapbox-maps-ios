@@ -20,6 +20,8 @@ public final class GestureManager: GestureHandlerDelegate {
         set {
             panGestureRecognizer.isEnabled = newValue.panEnabled
             pinchGestureRecognizer.isEnabled = newValue.pinchEnabled
+            pinchGestureHandler.rotateEnabled = newValue.pinchRotateEnabled
+            pinchGestureHandler.behavior = newValue.pinchBehavior
             pitchGestureRecognizer.isEnabled = newValue.pitchEnabled
             doubleTapToZoomInGestureRecognizer.isEnabled = newValue.doubleTapToZoomInEnabled
             doubleTouchToZoomOutGestureRecognizer.isEnabled = newValue.doubleTouchToZoomOutEnabled
@@ -35,6 +37,8 @@ public final class GestureManager: GestureHandlerDelegate {
             var gestureOptions = GestureOptions()
             gestureOptions.panEnabled = panGestureRecognizer.isEnabled
             gestureOptions.pinchEnabled = pinchGestureRecognizer.isEnabled
+            gestureOptions.pinchRotateEnabled = pinchGestureHandler.rotateEnabled
+            gestureOptions.pinchBehavior = pinchGestureHandler.behavior
             gestureOptions.pitchEnabled = pitchGestureRecognizer.isEnabled
             gestureOptions.doubleTapToZoomInEnabled = doubleTapToZoomInGestureRecognizer.isEnabled
             gestureOptions.doubleTouchToZoomOutEnabled = doubleTouchToZoomOutGestureRecognizer.isEnabled
@@ -91,22 +95,24 @@ public final class GestureManager: GestureHandlerDelegate {
     public weak var delegate: GestureManagerDelegate?
 
     private let panGestureHandler: PanGestureHandlerProtocol
-private let pinchGestureHandler: PinchGestureHandler
+    private let pinchGestureHandler: PinchGestureHandlerProtocol
     private let pitchGestureHandler: GestureHandler
     private let doubleTapToZoomInGestureHandler: DoubleTapToZoomInGestureHandler
     private let doubleTouchToZoomOutGestureHandler: DoubleTouchToZoomOutGestureHandler
     private let quickZoomGestureHandler: GestureHandler
     private let singleTapGestureHandler: GestureHandler
     private let animationLockoutGestureHandler: GestureHandler
+    private let mapboxMap: MapboxMapProtocol
 
     internal init(panGestureHandler: PanGestureHandlerProtocol,
-                  pinchGestureHandler: PinchGestureHandler,
+                  pinchGestureHandler: PinchGestureHandlerProtocol,
                   pitchGestureHandler: GestureHandler,
                   doubleTapToZoomInGestureHandler: DoubleTapToZoomInGestureHandler,
                   doubleTouchToZoomOutGestureHandler: DoubleTouchToZoomOutGestureHandler,
                   quickZoomGestureHandler: GestureHandler,
                   singleTapGestureHandler: GestureHandler,
-                  animationLockoutGestureHandler: GestureHandler) {
+                  animationLockoutGestureHandler: GestureHandler,
+                  mapboxMap: MapboxMapProtocol) {
         self.panGestureHandler = panGestureHandler
         self.pinchGestureHandler = pinchGestureHandler
         self.pitchGestureHandler = pitchGestureHandler
@@ -115,6 +121,7 @@ private let pinchGestureHandler: PinchGestureHandler
         self.quickZoomGestureHandler = quickZoomGestureHandler
         self.singleTapGestureHandler = singleTapGestureHandler
         self.animationLockoutGestureHandler = animationLockoutGestureHandler
+        self.mapboxMap = mapboxMap
 
         panGestureHandler.delegate = self
         pinchGestureHandler.delegate = self
@@ -133,10 +140,12 @@ private let pinchGestureHandler: PinchGestureHandler
     }
 
     internal func gestureBegan(for gestureType: GestureType) {
+        mapboxMap.beginGesture()
         delegate?.gestureManager(self, didBegin: gestureType)
     }
 
     func gestureEnded(for gestureType: GestureType, willAnimate: Bool) {
+        mapboxMap.endGesture()
         delegate?.gestureManager(self, didEnd: gestureType, willAnimate: willAnimate)
     }
 

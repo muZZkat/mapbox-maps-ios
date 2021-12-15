@@ -36,16 +36,25 @@ final class MockMapViewDependencyProvider: MapViewDependencyProviderProtocol {
         return GestureManager(
             panGestureHandler: MockPanGestureHandler(
                 gestureRecognizer: UIGestureRecognizer()),
-            pinchGestureHandler: makeGestureHandler(),
+            pinchGestureHandler: MockPinchGestureHandler(gestureRecognizer: UIGestureRecognizer()),
             pitchGestureHandler: makeGestureHandler(),
             doubleTapToZoomInGestureHandler: makeGestureHandler(),
             doubleTouchToZoomOutGestureHandler: makeGestureHandler(),
             quickZoomGestureHandler: makeGestureHandler(),
             singleTapGestureHandler: makeGestureHandler(),
-            animationLockoutGestureHandler: makeGestureHandler())
+            animationLockoutGestureHandler: makeGestureHandler(),
+            mapboxMap: mapboxMap)
     }
 
     func makeGestureHandler() -> GestureHandler {
         return GestureHandler(gestureRecognizer: UIGestureRecognizer())
+    }
+
+    func makeLocationProducer(mayRequestWhenInUseAuthorization: Bool) -> LocationProducerProtocol {
+        return MockLocationProducer()
+    }
+
+    func makeLocationManager(locationProducer: LocationProducerProtocol, style: StyleProtocol) -> LocationManager {
+        return LocationManager(locationProducer: locationProducer, puckManager: MockPuckManager())
     }
 }

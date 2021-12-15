@@ -1,5 +1,6 @@
 import XCTest
-@testable import MapboxMaps
+@_spi(Experimental) @testable import MapboxMaps
+@_implementationOnly import MapboxCoreMaps_Private
 
 final class MapboxMapTests: XCTestCase {
 
@@ -141,11 +142,81 @@ final class MapboxMapTests: XCTestCase {
     }
 
     func testProtocolConformance() {
-        let map = MapboxMap(mapClient: MockMapClient(), mapInitOptions: MapInitOptions())
-
         // Compilation check only
-        _ = map as MapFeatureQueryable
-        _ = map as ObservableProtocol
-        _ = map as MapEventsObservable
+        _ = mapboxMap as MapFeatureQueryable
+        _ = mapboxMap as ObservableProtocol
+        _ = mapboxMap as MapEventsObservable
+    }
+
+    func testBeginAndEndAnimation() {
+        XCTAssertFalse(mapboxMap.__testingMap.isUserAnimationInProgress())
+
+        mapboxMap.beginAnimation()
+
+        XCTAssertTrue(mapboxMap.__testingMap.isUserAnimationInProgress())
+
+        mapboxMap.beginAnimation()
+
+        XCTAssertTrue(mapboxMap.__testingMap.isUserAnimationInProgress())
+
+        mapboxMap.endAnimation()
+
+        XCTAssertTrue(mapboxMap.__testingMap.isUserAnimationInProgress())
+
+        mapboxMap.beginAnimation()
+
+        XCTAssertTrue(mapboxMap.__testingMap.isUserAnimationInProgress())
+
+        mapboxMap.endAnimation()
+
+        XCTAssertTrue(mapboxMap.__testingMap.isUserAnimationInProgress())
+
+        mapboxMap.endAnimation()
+
+        XCTAssertFalse(mapboxMap.__testingMap.isUserAnimationInProgress())
+    }
+
+    func testBeginAndEndGesture() {
+        XCTAssertFalse(mapboxMap.__testingMap.isGestureInProgress())
+
+        mapboxMap.beginGesture()
+
+        XCTAssertTrue(mapboxMap.__testingMap.isGestureInProgress())
+
+        mapboxMap.beginGesture()
+
+        XCTAssertTrue(mapboxMap.__testingMap.isGestureInProgress())
+
+        mapboxMap.endGesture()
+
+        XCTAssertTrue(mapboxMap.__testingMap.isGestureInProgress())
+
+        mapboxMap.beginGesture()
+
+        XCTAssertTrue(mapboxMap.__testingMap.isGestureInProgress())
+
+        mapboxMap.endGesture()
+
+        XCTAssertTrue(mapboxMap.__testingMap.isGestureInProgress())
+
+        mapboxMap.endGesture()
+
+        XCTAssertFalse(mapboxMap.__testingMap.isGestureInProgress())
+    }
+
+    func testSetMapProjection() {
+        XCTAssertEqual(mapboxMap.__testingMap.getMapProjection() as? [String: String], ["name": "mercator"])
+        try? mapboxMap.setMapProjection(.globe())
+        XCTAssertEqual(mapboxMap.__testingMap.getMapProjection() as? [String: String], ["name": "globe"])
+    }
+
+    func testGetMapProjection() {
+        mapboxMap.__testingMap.setMapProjectionForProjection(["name": "mercator"])
+        var projection = try? mapboxMap.mapProjection()
+        XCTAssertEqual(projection, .mercator())
+
+        mapboxMap.__testingMap.setMapProjectionForProjection(["name": "globe"])
+        projection = try? mapboxMap.mapProjection()
+        XCTAssertEqual(projection, .globe())
     }
 }

@@ -13,11 +13,22 @@ internal protocol MapboxMapProtocol: AnyObject {
     func dragStart(for point: CGPoint)
     func dragCameraOptions(from: CGPoint, to: CGPoint) -> CameraOptions
     func dragEnd()
-
+    func beginAnimation()
+    func endAnimation()
+    func beginGesture()
+    func endGesture()
     @discardableResult
     func onEvery(_ eventType: MapEvents.EventKind, handler: @escaping (Event) -> Void) -> Cancelable
+    // View annotation management
+    func setViewAnnotationPositionsUpdateListener(_ listener: ViewAnnotationPositionsUpdateListener?)
+    func addViewAnnotation(withId id: String, options: ViewAnnotationOptions) throws
+    func updateViewAnnotation(withId id: String, options: ViewAnnotationOptions) throws
+    func removeViewAnnotation(withId id: String) throws
+    func options(forViewAnnotationWithId id: String) throws -> ViewAnnotationOptions
+    func pointIsAboveHorizon(_ point: CGPoint) -> Bool
 }
 
+// swiftlint:disable:next type_body_length
 public final class MapboxMap: MapboxMapProtocol {
     /// The underlying renderer object responsible for rendering the map
     private let __map: Map
@@ -533,6 +544,63 @@ public final class MapboxMap: MapboxMapProtocol {
     public func dragEnd() {
         __map.dragEnd()
     }
+
+    internal func pointIsAboveHorizon(_ point: CGPoint) -> Bool {
+        guard case .mercator = try? mapProjection() else {
+            return false
+        }
+        let topMargin = 0.04 * size.height
+        let reprojectErrorMargin = min(10, topMargin / 2)
+        var p = point
+        p.y -= topMargin
+        let coordinate = self.coordinate(for: p)
+        let roundtripPoint = self.point(for: coordinate)
+        return roundtripPoint.y >= p.y + reprojectErrorMargin
+    }
+
+    // MARK: - Gesture and Animation Flags
+
+    private var animationCount = 0
+
+    /// If implementing a custom animation mechanism, call this method when the animation begins.
+    /// Must always be paired with a corresponding call to `endAnimation()`
+    public func beginAnimation() {
+        animationCount += 1
+        if animationCount == 1 {
+            __map.setUserAnimationInProgressForInProgress(true)
+        }
+    }
+
+    /// If implementing a custom animation mechanism, call this method when the animation ends.
+    /// Must always be paired with a corresponding call to `beginAnimation()`
+    public func endAnimation() {
+        assert(animationCount > 0)
+        animationCount -= 1
+        if animationCount == 0 {
+            __map.setUserAnimationInProgressForInProgress(false)
+        }
+    }
+
+    private var gestureCount = 0
+
+    /// If implementing a custom gesture, call this method when the gesture begins.
+    /// Must always be paired with a corresponding call to `endGesture()`
+    public func beginGesture() {
+        gestureCount += 1
+        if gestureCount == 1 {
+            __map.setGestureInProgressForInProgress(true)
+        }
+    }
+
+    /// If implementing a custom gesture, call this method when the gesture ends.
+    /// Must always be paired with a corresponding call to `beginGesture()`
+    public func endGesture() {
+        assert(gestureCount > 0)
+        gestureCount -= 1
+        if gestureCount == 0 {
+            __map.setGestureInProgressForInProgress(false)
+        }
+    }
 }
 
 // MARK: - MapFeatureQueryable
@@ -787,6 +855,81 @@ extension MapboxMap {
                                  sourceLayerId: sourceLayerId,
                                  featureId: featureId,
                                  stateKey: stateKey)
+    }
+
+}
+
+// MARK: - View Annotations
+
+extension MapboxMap {
+
+    internal func setViewAnnotationPositionsUpdateListener(_ listener: ViewAnnotationPositionsUpdateListener?) {
+        __map.setViewAnnotationPositionsUpdateListenerFor(listener)
+    }
+
+    internal func addViewAnnotation(withId id: String, options: ViewAnnotationOptions) throws {
+        let expected = __map.addViewAnnotation(forIdentifier: id, options: MapboxCoreMaps.ViewAnnotationOptions(options))
+        if expected.isError(), let reason = expected.error as? NSString {
+            throw MapError(coreError: reason)
+        }
+    }
+
+    internal func updateViewAnnotation(withId id: String, options: ViewAnnotationOptions) throws {
+        let expected = __map.updateViewAnnotation(forIdentifier: id, options: MapboxCoreMaps.ViewAnnotationOptions(options))
+        if expected.isError(), let reason = expected.error as? NSString {
+            throw MapError(coreError: reason)
+        }
+    }
+
+    internal func removeViewAnnotation(withId id: String) throws {
+        let expected = __map.removeViewAnnotation(forIdentifier: id)
+        if expected.isError(), let reason = expected.error as? NSString {
+            throw MapError(coreError: reason)
+        }
+    }
+
+    internal func options(forViewAnnotationWithId id: String) throws -> ViewAnnotationOptions {
+        let expected = __map.getViewAnnotationOptions(forIdentifier: id)
+        if expected.isError(), let reason = expected.error as? NSString {
+            throw MapError(coreError: reason)
+        }
+        guard let options = expected.value as? MapboxCoreMaps.ViewAnnotationOptions else {
+            fatalError("Failed to unwrap ViewAnnotationOptions")
+        }
+        return ViewAnnotationOptions(options)
+    }
+
+}
+
+// MARK: - MapProjection
+
+extension MapboxMap {
+    /// Errors related to MapProjection API
+    @_spi(Experimental) public enum MapProjectionError: Error {
+        case unsupportedProjection
+    }
+
+    /// Set map projection for Mapbox map.
+    /// - Parameter mode: The `MapProjection` to be used by the map.
+    /// - Throws: Errors during encoding or `MapProjectionError.unsupportedProjection` if the supplied projection is not compatible with the SDK.
+    @_spi(Experimental) public func setMapProjection(_ mapProjection: MapProjection) throws {
+        let data = try JSONEncoder().encode(mapProjection)
+        let object = try JSONSerialization.jsonObject(with: data, options: [])
+        __map.setMapProjectionForProjection(object)
+    }
+
+    /// Get current map projection for Mapbox map.
+    ///
+    /// Please note that even if MapboxMap is configured to use `MapProjection.globe`
+    /// starting from `GlobeMapProjection.transitionZoomLevel` and above
+    /// this method will return `MapProjection.mercator`.
+    ///
+    /// - Returns:
+    ///     `MapProjection` map is using.
+    /// - Throws: Errors during decoding
+    @_spi(Experimental) public func mapProjection() throws -> MapProjection {
+        let data = try JSONSerialization.data(withJSONObject: __map.getMapProjection(), options: [])
+        return try JSONDecoder().decode(MapProjection.self, from: data)
     }
 }
 

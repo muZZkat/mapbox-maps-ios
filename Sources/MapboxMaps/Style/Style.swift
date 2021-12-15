@@ -1,9 +1,31 @@
+// swiftlint:disable file_length
 @_implementationOnly import MapboxCommon_Private
 @_implementationOnly import MapboxCoreMaps_Private
 
-// swiftlint:disable file_length
+internal protocol StyleProtocol: AnyObject {
+    func addPersistentLayer(_ layer: Layer, layerPosition: LayerPosition?) throws
+    func addPersistentLayer(with properties: [String: Any], layerPosition: LayerPosition?) throws
+    func removeLayer(withId id: String) throws
+    func layerExists(withId id: String) -> Bool
+    func setLayerProperties(for layerId: String, properties: [String: Any]) throws
+
+    func addSource(_ source: Source, id: String) throws
+    func removeSource(withId id: String) throws
+    func sourceExists(withId id: String) -> Bool
+    func setSourceProperties(for sourceId: String, properties: [String: Any]) throws
+
+    //swiftlint:disable function_parameter_count
+    func addImage(_ image: UIImage,
+                  id: String,
+                  sdf: Bool,
+                  stretchX: [ImageStretches],
+                  stretchY: [ImageStretches],
+                  content: ImageContent?) throws
+    func removeImage(withId id: String) throws
+}
+
 // swiftlint:disable:next type_body_length
-public class Style {
+public final class Style: StyleProtocol {
 
     public private(set) weak var styleManager: StyleManager!
 
@@ -38,7 +60,7 @@ public class Style {
     ///   - layerPosition: Position at which to add the map.
     ///
     /// - Throws: StyleError or type conversion errors
-    internal func addPersistentLayer(_ layer: Layer, layerPosition: LayerPosition? = nil) throws {
+    public func addPersistentLayer(_ layer: Layer, layerPosition: LayerPosition? = nil) throws {
         // Attempt to encode the provided layer into JSON and apply it to the map
         let layerJSON = try layer.jsonObject()
         try addPersistentLayer(with: layerJSON, layerPosition: layerPosition)
@@ -190,43 +212,6 @@ public class Style {
         try setSourceProperty(for: id, property: "data", value: value)
     }
 
-    // MARK: - Light
-
-    /// Gets the value of a style light property.
-    ///
-    /// - Parameter property: Style light property name.
-    ///
-    /// - Returns: Style light property value.
-    public func lightProperty(_ property: String) -> Any {
-        return lightProperty(property).value
-    }
-
-    // MARK: - Terrain
-
-    /// Sets a terrain on the style
-    ///
-    /// - Parameter terrain: The `Terrain` that should be rendered
-    ///
-    /// - Throws:
-    ///     An error describing why the operation was unsuccessful.
-    public func setTerrain(_ terrain: Terrain) throws {
-        let terrainData = try JSONEncoder().encode(terrain)
-        guard let terrainDictionary = try JSONSerialization.jsonObject(with: terrainData) as? [String: Any] else {
-            throw TypeConversionError.unexpectedType
-        }
-
-        try setTerrain(properties: terrainDictionary)
-    }
-
-    /// Gets the value of a style terrain property.
-    ///
-    /// - Parameter property: Style terrain property name.
-    ///
-    /// - Returns: Style terrain property value.
-    public func terrainProperty(_ property: String) -> Any {
-        return terrainProperty(property).value
-    }
-
     /// `true` if and only if the style JSON contents, the style specified sprite
     /// and sources are all loaded, otherwise returns `false`.
     public var isLoaded: Bool {
@@ -341,7 +326,7 @@ public class Style {
     ///
     /// - Throws:
     ///     An error describing why the operation was unsuccessful
-    @_spi(Experimental) public func addPersistentLayer(with properties: [String: Any], layerPosition: LayerPosition?) throws {
+    public func addPersistentLayer(with properties: [String: Any], layerPosition: LayerPosition?) throws {
         return try handleExpected {
             return styleManager.addPersistentStyleLayer(forProperties: properties, layerPosition: layerPosition?.corePosition)
         }
@@ -349,7 +334,7 @@ public class Style {
 
     /// Returns `true` if the id passed in is associated to a persistent layer
     /// - Parameter id: The layer identifier to test
-    @_spi(Experimental) public func isPersistentLayer(id: String) throws -> Bool {
+    public func isPersistentLayer(id: String) throws -> Bool {
         return try handleExpected {
             return styleManager.isStyleLayerPersistent(forLayerId: id)
         }
@@ -369,7 +354,7 @@ public class Style {
     ///
     /// - Throws:
     ///     An error describing why the operation was unsuccessful.
-    @_spi(Experimental) public func addPersistentCustomLayer(withId id: String, layerHost: CustomLayerHost, layerPosition: LayerPosition?) throws {
+    public func addPersistentCustomLayer(withId id: String, layerHost: CustomLayerHost, layerPosition: LayerPosition?) throws {
         return try handleExpected {
             return styleManager.addPersistentStyleCustomLayer(forLayerId: id, layerHost: layerHost, layerPosition: layerPosition?.corePosition)
         }
@@ -750,7 +735,7 @@ public class Style {
         return UIImage(mbxImage: mbmImage)
     }
 
-    // MARK: Light
+    // MARK: - Light
 
     /// Sets the style global light source properties.
     ///
@@ -762,18 +747,9 @@ public class Style {
     /// - Throws:
     ///     An error describing why the operation was unsuccessful.
     public func setLight(properties: [String: Any]) throws {
-        return try handleExpected {
-            return styleManager.setStyleLightForProperties(properties)
+        try handleExpected {
+            styleManager.setStyleLightForProperties(properties)
         }
-    }
-
-    /// Gets the value of a style light property.
-    ///
-    /// - Parameter property: Style light property name.
-    ///
-    /// - Returns: Style light property value.
-    public func lightProperty(_ property: String) -> StylePropertyValue {
-        return styleManager.getStyleLightProperty(forProperty: property)
     }
 
     /// Sets a value to the style light property.
@@ -785,12 +761,50 @@ public class Style {
     /// - Throws:
     ///     An error describing why the operation was unsuccessful.
     public func setLightProperty(_ property: String, value: Any) throws {
-        return try handleExpected {
-            return styleManager.setStyleLightPropertyForProperty(property, value: value)
+        try handleExpected {
+            styleManager.setStyleLightPropertyForProperty(property, value: value)
         }
     }
 
+    /// Gets the value of a style light property.
+    ///
+    /// - Parameter property: Style light property name.
+    ///
+    /// - Returns: Style light property value.
+    public func lightProperty(_ property: String) -> Any {
+        return lightProperty(property).value
+    }
+
+    /// Gets the value of a style light property.
+    ///
+    /// - Parameter property: Style light property name.
+    ///
+    /// - Returns: Style light property value.
+    public func lightProperty(_ property: String) -> StylePropertyValue {
+        return styleManager.getStyleLightProperty(forProperty: property)
+    }
+
     // MARK: - Terrain
+
+    /// Sets a terrain on the style
+    ///
+    /// - Parameter terrain: The `Terrain` that should be rendered
+    ///
+    /// - Throws:
+    ///     An error describing why the operation was unsuccessful.
+    public func setTerrain(_ terrain: Terrain) throws {
+        let terrainData = try JSONEncoder().encode(terrain)
+        guard let terrainDictionary = try JSONSerialization.jsonObject(with: terrainData) as? [String: Any] else {
+            throw TypeConversionError.unexpectedType
+        }
+
+        try setTerrain(properties: terrainDictionary)
+    }
+
+    /// Removes terrain from style if it was set.
+    public func removeTerrain() {
+        styleManager.setStyleTerrainForProperties(NSNull())
+    }
 
     /// Sets the style global terrain source properties.
     ///
@@ -802,18 +816,9 @@ public class Style {
     /// - Throws:
     ///     An error describing why the operation was unsuccessful.
     public func setTerrain(properties: [String: Any]) throws {
-        return try handleExpected {
-            return styleManager.setStyleTerrainForProperties(properties)
+        try handleExpected {
+            styleManager.setStyleTerrainForProperties(properties)
         }
-    }
-
-    /// Gets the value of a style terrain property.
-    ///
-    /// - Parameter property: Style terrain property name.
-    ///
-    /// - Returns: Style terrain property value.
-    public func terrainProperty(_ property: String) -> StylePropertyValue {
-        return styleManager.getStyleTerrainProperty(forProperty: property)
     }
 
     /// Sets a value to the named style terrain property.
@@ -825,9 +830,27 @@ public class Style {
     /// - Throws:
     ///     An error describing why the operation was unsuccessful.
     public func setTerrainProperty(_ property: String, value: Any) throws {
-        return try handleExpected {
-            return styleManager.setStyleTerrainPropertyForProperty(property, value: value)
+        try handleExpected {
+            styleManager.setStyleTerrainPropertyForProperty(property, value: value)
         }
+    }
+
+    /// Gets the value of a style terrain property.
+    ///
+    /// - Parameter property: Style terrain property name.
+    ///
+    /// - Returns: Style terrain property value.
+    public func terrainProperty(_ property: String) -> Any {
+        return terrainProperty(property).value
+    }
+
+    /// Gets the value of a style terrain property.
+    ///
+    /// - Parameter property: Style terrain property name.
+    ///
+    /// - Returns: Style terrain property value.
+    public func terrainProperty(_ property: String) -> StylePropertyValue {
+        return styleManager.getStyleTerrainProperty(forProperty: property)
     }
 
     // MARK: - Custom geometry

@@ -1,12 +1,12 @@
 import XCTest
-@testable import MapboxMaps
+@_spi(Experimental) @testable import MapboxMaps
 
 final class GestureManagerTests: XCTestCase {
 
     var mapboxMap: MockMapboxMap!
     var cameraAnimationsManager: MockCameraAnimationsManager!
     var panGestureHandler: MockPanGestureHandler!
-    var pinchGestureHandler: GestureHandler!
+    var pinchGestureHandler: MockPinchGestureHandler!
     var pitchGestureHandler: GestureHandler!
     var doubleTapToZoomInGestureHandler: GestureHandler!
     var doubleTouchToZoomOutGestureHandler: GestureHandler!
@@ -23,7 +23,8 @@ final class GestureManagerTests: XCTestCase {
         cameraAnimationsManager = MockCameraAnimationsManager()
         panGestureHandler = MockPanGestureHandler(
             gestureRecognizer: MockGestureRecognizer())
-        pinchGestureHandler = makeGestureHandler()
+        pinchGestureHandler = MockPinchGestureHandler(
+            gestureRecognizer: MockGestureRecognizer())
         pitchGestureHandler = makeGestureHandler()
         doubleTapToZoomInGestureHandler = makeGestureHandler()
         doubleTouchToZoomOutGestureHandler = makeGestureHandler()
@@ -38,7 +39,8 @@ final class GestureManagerTests: XCTestCase {
             doubleTouchToZoomOutGestureHandler: doubleTouchToZoomOutGestureHandler,
             quickZoomGestureHandler: quickZoomGestureHandler,
             singleTapGestureHandler: singleTapGestureHandler,
-            animationLockoutGestureHandler: animationLockoutGestureHandler)
+            animationLockoutGestureHandler: animationLockoutGestureHandler,
+            mapboxMap: mapboxMap)
         delegate = MockGestureManagerDelegate()
         gestureManager.delegate = delegate
     }
@@ -153,6 +155,7 @@ final class GestureManagerTests: XCTestCase {
         XCTAssertEqual(delegate.gestureDidBeginStub.invocations.count, 1, "GestureBegan should have been invoked once. It was called \(delegate.gestureDidBeginStub.invocations.count) times.")
         XCTAssertTrue(delegate.gestureDidBeginStub.parameters.first?.gestureManager === gestureManager)
         XCTAssertEqual(delegate.gestureDidBeginStub.parameters.first?.gestureType, gestureType)
+        XCTAssertEqual(mapboxMap.beginGestureStub.invocations.count, 1)
     }
 
     func testGestureEnded() throws {
@@ -165,6 +168,7 @@ final class GestureManagerTests: XCTestCase {
         XCTAssertEqual(delegate.gestureDidEndStub.parameters.first?.gestureType, gestureType)
         let willAnimateValue = try XCTUnwrap(delegate.gestureDidEndStub.parameters.first?.willAnimate)
         XCTAssertEqual(willAnimateValue, willAnimate)
+        XCTAssertEqual(mapboxMap.endGestureStub.invocations.count, 1)
     }
 
     func testAnimationEnded() {
@@ -374,5 +378,51 @@ final class GestureManagerTests: XCTestCase {
         panGestureHandler.panMode = [.horizontal, .vertical].randomElement()!
 
         XCTAssertEqual(gestureManager.options.panMode, panGestureHandler.panMode)
+    }
+
+    func testPinchRotateEnabled() {
+        XCTAssertEqual(gestureManager.options.pinchRotateEnabled, true)
+        XCTAssertEqual(pinchGestureHandler.rotateEnabled, true)
+
+        gestureManager.options.pinchRotateEnabled = false
+
+        XCTAssertEqual(gestureManager.options.pinchRotateEnabled, false)
+        XCTAssertEqual(pinchGestureHandler.rotateEnabled, false)
+
+        gestureManager.options.pinchRotateEnabled = true
+
+        XCTAssertEqual(gestureManager.options.pinchRotateEnabled, true)
+        XCTAssertEqual(pinchGestureHandler.rotateEnabled, true)
+
+        pinchGestureHandler.rotateEnabled = false
+
+        XCTAssertEqual(gestureManager.options.pinchRotateEnabled, pinchGestureHandler.rotateEnabled)
+
+        pinchGestureHandler.rotateEnabled = true
+
+        XCTAssertEqual(gestureManager.options.pinchRotateEnabled, pinchGestureHandler.rotateEnabled)
+    }
+
+    func testPinchBehavior() {
+        XCTAssertEqual(gestureManager.options.pinchBehavior, .tracksTouchLocationsWhenPanningAfterZoomChange)
+        XCTAssertEqual(pinchGestureHandler.behavior, .tracksTouchLocationsWhenPanningAfterZoomChange)
+
+        gestureManager.options.pinchBehavior = .doesNotResetCameraAtEachFrame
+
+        XCTAssertEqual(gestureManager.options.pinchBehavior, .doesNotResetCameraAtEachFrame)
+        XCTAssertEqual(pinchGestureHandler.behavior, .doesNotResetCameraAtEachFrame)
+
+        gestureManager.options.pinchBehavior = .tracksTouchLocationsWhenPanningAfterZoomChange
+
+        XCTAssertEqual(gestureManager.options.pinchBehavior, .tracksTouchLocationsWhenPanningAfterZoomChange)
+        XCTAssertEqual(pinchGestureHandler.behavior, .tracksTouchLocationsWhenPanningAfterZoomChange)
+
+        pinchGestureHandler.behavior = .doesNotResetCameraAtEachFrame
+
+        XCTAssertEqual(gestureManager.options.pinchBehavior, pinchGestureHandler.behavior)
+
+        pinchGestureHandler.behavior = .tracksTouchLocationsWhenPanningAfterZoomChange
+
+        XCTAssertEqual(gestureManager.options.pinchBehavior, pinchGestureHandler.behavior)
     }
 }
